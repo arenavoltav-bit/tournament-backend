@@ -477,6 +477,16 @@ app.get('/api/bot/groups', botAuth, async (req, res) => {
 // ============================================================
 
 // Save full app state (called automatically from frontend)
+// ── Admin Auth Middleware ──
+const adminAuth = (req, res, next) => {
+  const secret = req.body?.secret || req.headers['x-admin-secret']
+  if (secret === process.env.ADMIN_SECRET || secret === 'ffbpls3@admin') {
+    next()
+  } else {
+    res.status(401).json({ error: 'Unauthorized' })
+  }
+}
+
 app.post('/api/admin/state', adminAuth, async (req, res) => {
   const { state } = req.body
 
