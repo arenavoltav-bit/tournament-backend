@@ -12,7 +12,11 @@ const cors    = require('cors')
 const { createClient } = require('@supabase/supabase-js')
 
 const app = express()
-app.use(cors())
+app.use(cors({
+  origin: '*',
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','x-admin-token','Authorization']
+}))
 app.use(express.json({ limit: '10mb' }))
 
 // ── Supabase (service role for full access) ──
