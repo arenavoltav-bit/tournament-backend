@@ -475,9 +475,16 @@ app.get('/api/bot/groups', botAuth, async (req, res) => {
 // Save full app state (called automatically from frontend)
 app.post('/api/admin/state', adminAuth, async (req, res) => {
   const { state } = req.body
-  if (!state) return res.status(400).json({ error: 'state required' })
 
   try {
+    if (state === null) {
+      // Reset — delete the state
+      await supabase.from('tournament_settings')
+        .delete()
+        .eq('setting_key', 'app_state')
+      return res.json({ success: true, cleared: true })
+    }
+
     await supabase.from('tournament_settings')
       .upsert({ 
         setting_key: 'app_state', 
