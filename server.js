@@ -467,6 +467,61 @@ app.get('/api/bot/groups', botAuth, async (req, res) => {
   res.json({ stage: data })
 })
 
+
+// ============================================================
+// ADMIN STATE — Full app state save/load for multi-device sync
+// ============================================================
+
+// Save full app state (called automatically from frontend)
+app.post('/api/admin/state', adminAuth, async (req, res) => {
+  const { state } = req.body
+  if (!state) return res.status(400).json({ error: 'state required' })
+
+  try {
+    await supabase.from('tournament_settings')
+      .upsert({ 
+        setting_key: 'app_state', 
+        setting_value: JSON.stringify(state),
+        updated_at: new Date()
+      }, { onConflict: 'setting_key' })
+
+    res.json({ success: true, saved_at: new Date().toISOString() })
+  } catch(e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// Load full app state (called on admin login)
+app.get('/api/admin/state', adminAuth, async (req, res) => {
+  try {
+    const { data } = await supabase.from('tournament_settings')
+      .select('setting_value, updated_at')
+      .eq('setting_key', 'app_state')
+      .single()
+
+    if (!data) return res.json({ state: null })
+
+    const state = JSON.parse(data.setting_value)
+    res.json({ state, updated_at: data.updated_at })
+  } catch(e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// Get state update timestamp (for polling - lightweight)
+app.get('/api/admin/state/ts', adminAuth, async (req, res) => {
+  try {
+    const { data } = await supabase.from('tournament_settings')
+      .select('updated_at')
+      .eq('setting_key', 'app_state')
+      .single()
+
+    res.json({ updated_at: data?.updated_at || null })
+  } catch(e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 // ============================================================
 // START SERVER
 // ============================================================
